@@ -1,0 +1,30 @@
+stages:
+  preprocess:
+    cmd: python preprocess.py
+    deps:
+      - data/heart.csv
+      - preprocess.py
+    outs:
+      - data/train.csv
+      - data/test.csv
+
+  train:
+    cmd: python train.py
+    deps:
+      - data/train.csv
+      - train.py
+    outs:
+      - models/model.pkl
+    metrics:
+      - models/metrics.json
+
+  validate:
+    cmd: python validate.py
+    deps:
+      - data/test.csv
+      - models/model.pkl
+      - validate.py
+    outs:
+      - models/confusion_matrix.png
+    metrics:
+      - models/metrics.json
