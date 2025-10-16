@@ -44,6 +44,6 @@ plt.savefig(cm_path)
 plt.close()
 
 # Save confusion matrix as CSV for DVC plots
-cm_df = pd.DataFrame(cm)
-cm_csv_path = os.path.join('models', 'confusion_matrix.csv')
-cm_df.to_csv(cm_csv_path, index=False, header=False)
+# cm_df = pd.DataFrame(cm)
+# cm_csv_path = os.path.join('models', 'confusion_matrix.csv')
+# cm_df.to_csv(cm_csv_path, index=False, header=False)
