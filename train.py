@@ -17,5 +17,5 @@ model.fit(X, y)
 train_preds = model.predict(X)
 train_acc = accuracy_score(y, train_preds)
 
-model_path = os.path.join('models', 'RFmodel.pkl')
+model_path = os.path.join('models', 'model.pkl')
 joblib.dump(model, model_path)

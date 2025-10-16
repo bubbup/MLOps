@@ -11,7 +11,7 @@ test_data = pd.read_csv('data/test.csv')
 
 X_test = test_data.drop('target', axis=1)
 y_test = test_data['target']
-model = joblib.load('models/RFmodel.pkl')
+model = joblib.load('models/model.pkl')
 
 y_pred = model.predict(X_test)
 metrics = {
@@ -42,3 +42,8 @@ plt.tight_layout()
 cm_path = os.path.join('models', 'confusion_matrix.png')
 plt.savefig(cm_path)
 plt.close()
+
+# Save confusion matrix as CSV for DVC plots
+cm_df = pd.DataFrame(cm)
+cm_csv_path = os.path.join('models', 'confusion_matrix.csv')
+cm_df.to_csv(cm_csv_path, index=False, header=False)
