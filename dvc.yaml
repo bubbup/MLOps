@@ -28,4 +28,4 @@ stages:
     metrics:
       - models/metrics.json
     plots:
-      - models/confusion_matrix.csv
+      - models/confusion_matrix.png
