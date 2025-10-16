@@ -1,0 +1,62 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python preprocess.py
+    deps:
+    - path: data/heart.csv
+      hash: md5
+      md5: f8376ac9db4d25345aead44787474f27
+      size: 11328
+    - path: preprocess.py
+      hash: md5
+      md5: 4e902bc0b99e93e35267c0834886a026
+      size: 1924
+    outs:
+    - path: data/test.csv
+      hash: md5
+      md5: 9eb9a2d9575855c4c7a5eb61182e8d68
+      size: 3100
+    - path: data/train.csv
+      hash: md5
+      md5: 210a9a7f8630f11fbbb8d78d78966a4f
+      size: 8832
+  train:
+    cmd: python train.py
+    deps:
+    - path: data/train.csv
+      hash: md5
+      md5: 210a9a7f8630f11fbbb8d78d78966a4f
+      size: 8832
+    - path: train.py
+      hash: md5
+      md5: 124ef3369b5a2b6b2c9c232766427aae
+      size: 513
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: 8e56f21a202679c3b7d57355348cbbff
+      size: 670393
+  validate:
+    cmd: python validate.py
+    deps:
+    - path: data/test.csv
+      hash: md5
+      md5: 9eb9a2d9575855c4c7a5eb61182e8d68
+      size: 3100
+    - path: models/model.pkl
+      hash: md5
+      md5: 8e56f21a202679c3b7d57355348cbbff
+      size: 670393
+    - path: validate.py
+      hash: md5
+      md5: 4eddd391aef45feb6ebb079ebbf1e9d2
+      size: 1305
+    outs:
+    - path: models/confusion_matrix.png
+      hash: md5
+      md5: b36aec42ff68c44b6ec5868c8e974485
+      size: 14382
+    - path: models/metrics.json
+      hash: md5
+      md5: c1767ad0d1cc55031857b64332c52d4a
+      size: 150

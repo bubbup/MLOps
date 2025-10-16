@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-data = pd.read_csv('data\heart.csv')
+data = pd.read_csv('data/heart.csv')
 data = data.rename(
     columns = {'cp':'chest_pain_type', 
                'trestbps':'resting_blood_pressure', 

@@ -15,8 +15,7 @@ stages:
       - train.py
     outs:
       - models/model.pkl
-    metrics:
-      - models/metrics.json
+
 
   validate:
     cmd: python validate.py
@@ -26,5 +25,4 @@ stages:
       - validate.py
     outs:
       - models/confusion_matrix.png
-    metrics:
       - models/metrics.json
