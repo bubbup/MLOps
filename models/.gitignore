@@ -1,2 +1,4 @@
 /confusion_matrix.png
 /metrics.json
+/model.pkl
+/confusion_matrix.csv
