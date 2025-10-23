@@ -14,7 +14,7 @@ os.environ['MLFLOW_TRACKING_USERNAME'] = os.getenv('MLFLOW_TRACKING_USERNAME')
 os.environ['MLFLOW_TRACKING_PASSWORD'] = os.getenv('MLFLOW_TRACKING_PASSWORD')
 
 # Set MLflow experiment
-mlflow.set_experiment("heart disease prediction")
+mlflow.set_experiment("heart Disease Prediction")
 # Load training data
 train_data = pd.read_csv('data/train.csv')
 X = train_data.drop('target', axis=1)
@@ -59,8 +59,14 @@ with mlflow.start_run(run_name="svm_tuning") as parent_run:
                     best_params = {"C": C, "kernel": kernel}
 
     # Save the best model to models_tuned/model.pkl
+    mlflow.log_metric("best_val_accuracy", best_acc)
+    mlflow.log_params(best_params)
+
     if best_model is not None:
         model_path = os.path.join('models_tuned', 'model.pkl')
         joblib.dump(best_model, model_path)
-        print(f"Best model saved with params {best_params} and accuracy {best_acc:.4f}")
+        model_path = "best_model.joblib"
+        joblib.dump(best_model, model_path)
+        mlflow.log_artifact(model_path, "best_model")
+        os.remove(model_path)
 
