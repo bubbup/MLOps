@@ -1,3 +1,7 @@
 /confusion_matrix.png
 /metrics.json
 /confusion_matrix.csv
+/model.pkl
+/model.joblib
+/mlruns
+/.env
