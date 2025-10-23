@@ -2,6 +2,8 @@ import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from dotenv import load_dotenv
+load_dotenv()
 data = pd.read_csv('data/heart.csv')
 data = data.rename(
     columns = {'cp':'chest_pain_type', 

@@ -6,7 +6,8 @@ import joblib
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-
+from dotenv import load_dotenv
+load_dotenv()
 mlflow.set_experiment("heart disease prediction")  
 # Load training data
 train_data = pd.read_csv('data/train.csv')

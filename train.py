@@ -2,7 +2,8 @@ import os
 import pandas as pd
 import joblib
 from sklearn.svm import SVC
-
+from dotenv import load_dotenv
+load_dotenv()
 # Load training data
 train_data = pd.read_csv('data/train.csv')
 X = train_data.drop('target', axis=1)
@@ -10,7 +11,7 @@ y = train_data['target']
 
 # Define and train SVM model
 model = SVC(
-    C=1.0,               # Regularization parameter
+    C=0.5,               # Regularization parameter
     kernel='rbf',        # Kernel type
     probability=True,    # Enable probabilities for later validation
     random_state=42
