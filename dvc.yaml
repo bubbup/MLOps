@@ -15,16 +15,20 @@ stages:
       - train.py
     outs:
       - models/model.pkl
-
+  tune:
+    cmd: python tune.py
+    deps:
+      - data/train.csv
+      - tune.py
+    outs:
+      - models_tuned/model.pkl  
 
   validate:
     cmd: python validate.py
     deps:
       - data/test.csv
-      - models/model.pkl
+      - models_tuned/model.pkl
       - validate.py
-    # outs:
-    #   - models/confusion_matrix.png
     metrics:
       - models/metrics.json
     plots:

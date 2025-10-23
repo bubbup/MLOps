@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, ConfusionMatrixDisplay
 )
-
+from dotenv import load_dotenv
+load_dotenv()
 test_data = pd.read_csv('data/test.csv')
 
 X_test = test_data.drop('target', axis=1)
