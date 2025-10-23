@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from dotenv import load_dotenv
 load_dotenv()
+# import dagshub
+# dagshub.init(repo_owner='bubbup', repo_name='MLOps', mlflow=True)
 data = pd.read_csv('data/heart.csv')
 data = data.rename(
     columns = {'cp':'chest_pain_type', 

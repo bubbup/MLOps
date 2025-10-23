@@ -9,8 +9,8 @@ stages:
       size: 11328
     - path: preprocess.py
       hash: md5
-      md5: ab0810cebc12a683245e97d52d1a4631
-      size: 1971
+      md5: 4fe616f421b2405d71f482772499e67a
+      size: 2058
     outs:
     - path: data/test.csv
       hash: md5
@@ -29,8 +29,8 @@ stages:
       size: 8832
     - path: train.py
       hash: md5
-      md5: 13383bb96729debd5223f560a6af2ab0
-      size: 648
+      md5: a8b2009d90475b9b4aa9b7502330050f
+      size: 1582
     outs:
     - path: models/model.pkl
       hash: md5
@@ -49,17 +49,17 @@ stages:
       size: 12219
     - path: validate.py
       hash: md5
-      md5: edd1b07c4c12ef572c1365c2f6c3a720
-      size: 1501
+      md5: b262da0a59838d6755424c40cfc5b781
+      size: 1546
     outs:
     - path: models/confusion_matrix.png
       hash: md5
-      md5: 2f409440c55d35d3b3ba3d37a3c43161
-      size: 14624
+      md5: 4760f9533195e459e99390c517db31e8
+      size: 14659
     - path: models/metrics.json
       hash: md5
-      md5: d456970a282da6e2dd1d89ce2a05684c
-      size: 149
+      md5: 2cac063a1b804bbcaa408cf6f6748d59
+      size: 148
   tune:
     cmd: python tune.py
     deps:
@@ -69,8 +69,8 @@ stages:
       size: 8832
     - path: tune.py
       hash: md5
-      md5: 6c1472cd8ed9893a44567643ee6d0a02
-      size: 2011
+      md5: 680fdd028b19ef0537e6bbb0c0961177
+      size: 2282
     outs:
     - path: models_tuned/model.pkl
       hash: md5

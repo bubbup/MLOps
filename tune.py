@@ -8,7 +8,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from dotenv import load_dotenv
 load_dotenv()
-mlflow.set_experiment("heart disease prediction")  
+# Set MLflow tracking URI - IMPORTANT!
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
+os.environ['MLFLOW_TRACKING_USERNAME'] = os.getenv('MLFLOW_TRACKING_USERNAME')
+os.environ['MLFLOW_TRACKING_PASSWORD'] = os.getenv('MLFLOW_TRACKING_PASSWORD')
+
+# Set MLflow experiment
+mlflow.set_experiment("heart disease prediction")
 # Load training data
 train_data = pd.read_csv('data/train.csv')
 X = train_data.drop('target', axis=1)
@@ -44,7 +50,6 @@ with mlflow.start_run(run_name="svm_tuning") as parent_run:
                 mlflow.log_param("C", C)
                 mlflow.log_param("kernel", kernel)
                 mlflow.log_metric("val_accuracy", acc)
-                mlflow.sklearn.log_model(model, "model")
 
 
                 # Track the best model
