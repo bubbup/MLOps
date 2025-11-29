@@ -1,9 +1,5 @@
-numpy
-pandas
-scikit-learn
-matplotlib
-seaborn
-jupyter
-tensorflow
-keras
-dvc
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+requests==2.31.0
+gradio==4.28.3
+huggingface-hub==0.22.2
