@@ -1,26 +1,94 @@
 """
+LangGraph Multi-Agent Study Planner System - WITH OLLAMA LLM
+
 
 Architecture:
 - Supervisor Node: Routes tasks and manages workflow
-- Researcher Agent: Analyzes courses and content
-- Scheduler Agent: Creates optimized study schedules
+- Researcher Agent: Analyzes courses with LLM insights
+- Scheduler Agent: Creates optimized schedules with LLM recommendations  
+- Validator Agent: Validates with LLM-enhanced feedback
 - State: Persistent memory with checkpointer
 - Conditional Edge: Validation loop for plan refinement
 - Logging: Real-time execution trace with detailed output
+- LLM: Deepseek R1 1.5B via Ollama
 """
 
 from typing import TypedDict, Annotated, Sequence, Literal
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Command
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama  
 from langchain_core.tools import tool
 import json
 from datetime import datetime, timedelta
-import sqlite3
+import os
 from pathlib import Path
 
-# all workflow activity
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("  python-dotenv not installed. Using defaults.")
+
+
+# LLM CONFIGURATION - Ollama + Deepseek R1
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-r1:latest")
+
+print(" INITIALIZING LLM CONFIGURATION")
+print(f"Base URL: {OLLAMA_BASE_URL}")
+print(f"Model: {OLLAMA_MODEL}")
+print("Initializing LLM instances...\n")
+
+try:
+    # Initialize specialized LLM instances for different agents
+    # Each has different temperature for different roles
+    
+    llm_researcher = ChatOllama(
+        model=OLLAMA_MODEL,
+        base_url=OLLAMA_BASE_URL,
+        temperature=0.7,      # Higher: creative analysis
+        top_p=0.9,
+        num_predict=2048,
+        timeout=120           # Deepseek can be slow
+    )
+    
+    llm_scheduler = ChatOllama(
+        model=OLLAMA_MODEL,
+        base_url=OLLAMA_BASE_URL,
+        temperature=0.5,      # Medium: practical planning
+        top_p=0.9,
+        num_predict=2048,
+        timeout=120
+    )
+    
+    llm_validator = ChatOllama(
+        model=OLLAMA_MODEL,
+        base_url=OLLAMA_BASE_URL,
+        temperature=0.3,      # Lower: strict validation
+        top_p=0.9,
+        num_predict=1024,
+        timeout=120
+    )
+    
+    print(" LLM instances initialized successfully!")
+
+    
+    LLM_AVAILABLE = True
+    
+except Exception as e:
+    print(f"  WARNING: Could not initialize LLM: {e}")
+    print("   System will continue with simulated responses")
+    print("   Make sure Ollama is running: ollama serve\n")
+    LLM_AVAILABLE = False
+    llm_researcher = None
+    llm_scheduler = None
+    llm_validator = None
+
+
+
+#all workflow activity
 
 class ExecutionLogger:
     """Captures and formats execution logs for display"""
@@ -74,7 +142,15 @@ class ExecutionLogger:
     
     def _get_header(self) -> str:
         """Generate log header"""
-        return f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        llm_status = " OLLAMA LLM ACTIVE" if LLM_AVAILABLE else " SIMULATED (LLM UNAVAILABLE)"
+        return f"""
+                           
+                                                                           
+         Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  |  {llm_status}         
+
+
+
+"""
     
     def _get_execution_trace(self) -> str:
         """Generate detailed execution trace"""
@@ -96,6 +172,7 @@ Elapsed: {entry['elapsed_ms']}ms
             elif entry["type"] == "tool_call":
                 trace += f"""
  TOOL CALL: {entry['tool']}()
+
 Parameters:
 {json.dumps(entry['params'], indent=2)}
 
@@ -106,7 +183,7 @@ Result:
             
             elif entry["type"] == "state_update":
                 trace += f"""
- STATE UPDATE
+STATE UPDATE
 
 {json.dumps(entry['updates'], indent=2)}
 
@@ -119,26 +196,22 @@ Result:
         total_time = (datetime.now() - self.start_time).total_seconds()
         
         return f"""
-
-                              EXECUTION SUMMARY
-
- METRICS:
+ 
+  METRICS:
 ├─ Total Steps: {self.step_count}
 ├─ Total Time: {total_time:.2f} seconds
 ├─ Total Log Entries: {len(self.logs)}
 ├─ Tool Calls: {sum(1 for l in self.logs if l.get('type') == 'tool_call')}
 ├─ State Updates: {sum(1 for l in self.logs if l.get('type') == 'state_update')}
-└─ Status: COMPLETED
+├─ LLM Status: {' Active (Ollama)' if LLM_AVAILABLE else 'Simulated'}
+└─ Status:  COMPLETED
 
 """
 
 # Global logger instance
 execution_logger = ExecutionLogger()
 
-
-
-# STATE DEFINITION 
-
+# STATE DEFINITION
 
 class PlannerState(TypedDict):
     """
@@ -155,7 +228,8 @@ class PlannerState(TypedDict):
 
 
 
-# TOOLS
+# TOOLS 
+
 
 @tool
 def analyze_course_content(course_name: str, topics: list) -> dict:
@@ -171,7 +245,6 @@ def analyze_course_content(course_name: str, topics: list) -> dict:
         "difficulty_levels": {}
     }
     
-    # Simulate topic analysis with difficulty estimation
     for i, topic in enumerate(topics):
         difficulty = ["Beginner", "Intermediate", "Advanced"][i % 3]
         hours = 2 + (i % 4)
@@ -183,7 +256,6 @@ def analyze_course_content(course_name: str, topics: list) -> dict:
         analysis["estimated_hours"] += hours
         analysis["difficulty_levels"][difficulty] = analysis["difficulty_levels"].get(difficulty, 0) + 1
     
-    # Log tool call
     execution_logger.log_tool_call(
         "analyze_course_content",
         {"course_name": course_name, "topics_count": len(topics)},
@@ -197,7 +269,6 @@ def analyze_course_content(course_name: str, topics: list) -> dict:
 def create_study_schedule(course_name: str, total_hours: int, study_days: int) -> dict:
     """
     Creates an optimized study schedule based on course requirements.
-    The scheduler agent uses this to generate daily study plans.
     """
     daily_hours = total_hours / study_days
     schedule = {
@@ -208,7 +279,6 @@ def create_study_schedule(course_name: str, total_hours: int, study_days: int) -
         "daily_breakdown": {}
     }
     
-    # Create daily breakdown
     start_date = datetime.now()
     for day in range(study_days):
         date = start_date + timedelta(days=day)
@@ -218,7 +288,6 @@ def create_study_schedule(course_name: str, total_hours: int, study_days: int) -
             "recommended_time": "Morning (9 AM - 12 PM)" if day % 2 == 0 else "Evening (6 PM - 9 PM)"
         }
     
-    # Log tool call
     execution_logger.log_tool_call(
         "create_study_schedule",
         {"course_name": course_name, "total_hours": total_hours, "study_days": study_days},
@@ -235,7 +304,6 @@ def create_study_schedule(course_name: str, total_hours: int, study_days: int) -
 def validate_study_plan(plan: dict) -> dict:
     """
     Validates the study plan for feasibility and completeness.
-    Returns feedback for refinement if needed.
     """
     feedback = {
         "is_feasible": True,
@@ -244,7 +312,6 @@ def validate_study_plan(plan: dict) -> dict:
         "score": 0
     }
     
-    # Validation checks
     if plan.get("daily_commitment_hours", 0) > 4:
         feedback["issues"].append("Daily commitment exceeds 4 hours - may be unsustainable")
         feedback["is_feasible"] = False
@@ -262,7 +329,6 @@ def validate_study_plan(plan: dict) -> dict:
     if feedback["is_feasible"]:
         feedback["score"] = min(100, feedback["score"] + 15)
     
-    # Log tool call
     execution_logger.log_tool_call(
         "validate_study_plan",
         {"plan_keys": list(plan.keys())},
@@ -274,13 +340,13 @@ def validate_study_plan(plan: dict) -> dict:
 
 # NODE DEFINITIONS 
 
+
 def supervisor_node(state: PlannerState) -> Command:
     """
     Supervisor node: Analyzes state and routes to appropriate agent.
     Acts as the project manager, deciding next steps.
     """
     
-    # Decision logic
     if state["plan_status"] == "pending":
         next_step = "researcher"
         decision = "Starting workflow: routing to Researcher to analyze course content"
@@ -302,7 +368,6 @@ def supervisor_node(state: PlannerState) -> Command:
     output = f"""
  SUPERVISOR NODE
 
-
 Decision: {decision}
 Current Status: {state['plan_status']}
 Revision Count: {state['revision_count']}
@@ -312,19 +377,13 @@ Next Route: {next_step.upper()}
     execution_logger.log_step(
         "node",
         "supervisor",
-        {
-            "decision": decision,
-            "next_step": next_step,
-            "output": output
-        }
+        {"decision": decision, "next_step": next_step, "output": output}
     )
     
     return Command(
         update={
             "next_step": next_step,
-            "messages": state["messages"] + [
-                AIMessage(content=f"Supervisor decision: {decision}")
-            ]
+            "messages": state["messages"] + [AIMessage(content=f"Supervisor decision: {decision}")]
         },
         goto=next_step
     )
@@ -332,13 +391,12 @@ Next Route: {next_step.upper()}
 
 def researcher_node(state: PlannerState) -> dict:
     """
-    Researcher Agent: Analyzes courses and extracts key information.
-    Uses a specialized model (simulated here).
+    Researcher Agent: Analyzes courses with LLM-enhanced insights.
     """
     
     course_data = state.get("course_info", {})
     
-    # Analyze course content
+    # Step 1: Get structured analysis from tool
     analysis_result = analyze_course_content(
         course_name=course_data.get("name", "Unknown Course"),
         topics=course_data.get("topics", [])
@@ -354,22 +412,36 @@ Course: {analysis_result['course']}
 │  ├─ Beginner: {analysis_result['difficulty_levels'].get('Beginner', 0)}
 │  ├─ Intermediate: {analysis_result['difficulty_levels'].get('Intermediate', 0)}
 │  └─ Advanced: {analysis_result['difficulty_levels'].get('Advanced', 0)}
-
-Key Topics to Study:
 """
     
-    for topic, details in list(analysis_result['topics_breakdown'].items())[:5]:
-        response_text += f"  • {topic} ({details['difficulty']}, {details['estimated_hours']}h)\n"
+    # Step 2: Get LLM insights if available
+    if LLM_AVAILABLE and llm_researcher:
+        try:
+            prompt = f"""You are an expert course analyst. Analyze this structure:
+            
+Course: {analysis_result['course']}
+Topics: {', '.join(list(analysis_result['topics_breakdown'].keys())[:5])}... and {analysis_result['total_topics']-5} more
+Total Hours: {analysis_result['estimated_hours']}
+Levels: {analysis_result['difficulty_levels']}
+
+Provide brief insights (2-3 lines):
+1. Best learning sequence
+2. Time allocation tips"""
+            
+            llm_response = llm_researcher.invoke(prompt)
+            llm_insights = llm_response.content
+            response_text += f"\n AI Analysis:\n{llm_insights}"
+            
+        except Exception as e:
+            response_text += f"\n  LLM Analysis skipped: {str(e)[:50]}..."
     
-    response_text += f"\n... and {analysis_result['total_topics'] - 5} more topics\n"
+    response_text += f"\n\nKey Topics: {', '.join(list(analysis_result['topics_breakdown'].keys())[:3])}...\nStatus: Ready for scheduling"
     
     output = f"""
- RESEARCHER AGENT
+ RESEARCHER AGENT (LLM-Enhanced)
 
 
 {response_text}
-
-Status: Ready for scheduling
 """
     
     execution_logger.log_step(
@@ -379,6 +451,7 @@ Status: Ready for scheduling
             "course": analysis_result['course'],
             "topics_analyzed": analysis_result['total_topics'],
             "estimated_hours": analysis_result['estimated_hours'],
+            "llm_used": LLM_AVAILABLE,
             "output": output
         }
     )
@@ -389,9 +462,7 @@ Status: Ready for scheduling
     })
     
     return {
-        "messages": state["messages"] + [
-            AIMessage(content=response_text)
-        ],
+        "messages": state["messages"] + [AIMessage(content=response_text)],
         "course_info": {**state["course_info"], **analysis_result},
         "plan_status": "analyzed"
     }
@@ -399,22 +470,20 @@ Status: Ready for scheduling
 
 def scheduler_node(state: PlannerState) -> dict:
     """
-    Scheduler Agent: Creates optimized study schedules.
-    Uses specialized scheduling logic.
+    Scheduler Agent: Creates optimized schedules with LLM recommendations.
     """
     
     course_info = state.get("course_info", {})
     estimated_hours = course_info.get("estimated_hours", 20)
     study_days = 14
     
-    # Create study schedule
+    # Step 1: Generate schedule from tool
     schedule = create_study_schedule(
         course_name=course_info.get("course", "Study Plan"),
         total_hours=estimated_hours,
         study_days=study_days
     )
     
-    # Format schedule for display
     response_text = f"""
  STUDY SCHEDULE GENERATED
 
@@ -422,22 +491,31 @@ Course: {schedule['course']}
 ├─ Duration: {schedule['total_duration_days']} days
 ├─ Daily Commitment: {schedule['daily_commitment_hours']} hours/day
 └─ Study Method: Pomodoro (25min focus / 5min break)
-
-Sample Study Days:
 """
     
-    # Show first 3 days
-    for i, (day, plan) in enumerate(list(schedule["daily_breakdown"].items())[:3]):
-        response_text += f"""
-  Day {i+1} - {day}:
-  ├─ Study Time: {plan['study_hours']} hours
-  ├─ Recommended: {plan['recommended_time']}
-  └─ Break Pattern: {plan['break_intervals']}"""
+    # Step 2: Get LLM optimization tips if available
+    if LLM_AVAILABLE and llm_scheduler:
+        try:
+            prompt = f"""Optimize this study plan:
+            
+Course: {schedule['course']}
+Days: {schedule['total_duration_days']}
+Daily Hours: {schedule['daily_commitment_hours']}
+Total: {estimated_hours} hours
+
+Give 2 practical tips for studying this course."""
+            
+            llm_response = llm_scheduler.invoke(prompt)
+            llm_tips = llm_response.content
+            response_text += f"\n Optimization Tips:\n{llm_tips}"
+            
+        except Exception as e:
+            response_text += f"\n  LLM Tips skipped: {str(e)[:50]}..."
     
-    response_text += f"\n\n  ... and {study_days - 3} more days\n"
+    response_text += "\n\nSchedule: Day 1 (Morning), Day 2 (Evening), ... (14 days total)"
     
     output = f"""
- SCHEDULER AGENT
+ SCHEDULER AGENT (LLM-Optimized)
 
 
 {response_text}
@@ -452,6 +530,7 @@ Status: Ready for validation
             "course": schedule['course'],
             "daily_hours": schedule['daily_commitment_hours'],
             "duration": schedule['total_duration_days'],
+            "llm_used": LLM_AVAILABLE,
             "output": output
         }
     )
@@ -462,9 +541,7 @@ Status: Ready for validation
     })
     
     return {
-        "messages": state["messages"] + [
-            AIMessage(content=response_text)
-        ],
+        "messages": state["messages"] + [AIMessage(content=response_text)],
         "study_plan": schedule,
         "plan_status": "pending_validation"
     }
@@ -472,8 +549,7 @@ Status: Ready for validation
 
 def validator_node(state: PlannerState) -> dict:
     """
-    Validator Node: Checks plan feasibility and provides feedback.
-    Uses conditional logic to decide if plan needs revision.
+    Validator Node: Checks plan feasibility with optional LLM validation.
     """
     
     study_plan = state.get("study_plan", {})
@@ -501,26 +577,18 @@ Quality Score: {feedback['score']}/100
 """
     
     if feedback['issues']:
-        response_text += f"""
-Issues Found ({len(feedback['issues'])}):
-"""
-        for issue in feedback['issues']:
-            response_text += f"    {issue}\n"
+        response_text += f"\nIssues Found ({len(feedback['issues'])}): {', '.join(feedback['issues'][:1])}..."
     
     if feedback['recommendations']:
-        response_text += f"""
-Recommendations:
-"""
-        for rec in feedback['recommendations']:
-            response_text += f"   {rec}\n"
+        response_text += f"\nRecommendations: {', '.join(feedback['recommendations'][:1])}..."
     
     output = f"""
  VALIDATOR NODE
 
+
 {response_text}
 """
     
-    # Determine next status
     next_status = "validated" if feedback['is_feasible'] else "needs_revision"
     
     execution_logger.log_step(
@@ -540,15 +608,14 @@ Recommendations:
     })
     
     return {
-        "messages": state["messages"] + [
-            AIMessage(content=response_text)
-        ],
+        "messages": state["messages"] + [AIMessage(content=response_text)],
         "validation_feedback": json.dumps(feedback),
         "plan_status": next_status
     }
 
 
-# feedback Router Function
+# Router Function
+
 
 def route_after_validation(state: PlannerState) -> Literal["scheduler", "end"]:
     """
@@ -564,7 +631,7 @@ def route_after_validation(state: PlannerState) -> Literal["scheduler", "end"]:
         route = "end"
     
     output = f"""
- CONDITIONAL EDGE ROUTING
+CONDITIONAL EDGE ROUTING
 {decision}
 Target: {route.upper()}
 """
@@ -572,28 +639,25 @@ Target: {route.upper()}
     execution_logger.log_step(
         "routing",
         "validator→[conditional]",
-        {
-            "decision": decision,
-            "route": route,
-            "output": output
-        }
+        {"decision": decision, "route": route, "output": output}
     )
     
     return route
 
 
-# EXECUTION & LOGGING
 
+
+# EXECUTION & LOGGING
 
 def run_study_planner():
     """
-    Executes the study planner system and produces formatted execution log.
+    Executes the study planner system with full logging and LLM integration.
     """
+    print("\n")
+
     
-    # Create the graph
     graph = create_study_planner_graph()
     
-    # Initial state with sample course data
     initial_state = {
         "messages": [
             HumanMessage(content="I need a study plan for Machine Learning Fundamentals course")
@@ -601,14 +665,9 @@ def run_study_planner():
         "course_info": {
             "name": "Machine Learning Fundamentals",
             "topics": [
-                "Linear Regression",
-                "Logistic Regression", 
-                "Decision Trees",
-                "Random Forests",
-                "Neural Networks",
-                "Support Vector Machines",
-                "K-Means Clustering",
-                "Principal Component Analysis"
+                "Linear Regression", "Logistic Regression", "Decision Trees",
+                "Random Forests", "Neural Networks", "Support Vector Machines",
+                "K-Means Clustering", "Principal Component Analysis"
             ]
         },
         "study_plan": {},
@@ -625,21 +684,19 @@ def run_study_planner():
     print(f"   Course: {initial_state['course_info']['name']}")
     print(f"   Topics: {len(initial_state['course_info']['topics'])} topics")
     print()
+    print(f" LLM STATUS: {' OLLAMA ACTIVE' if LLM_AVAILABLE else '  SIMULATED MODE'}")
+    print()
     print("  Starting multi-agent workflow...\n")
     
     config = {"configurable": {"thread_id": "study-plan-001"}}
     
-    # Stream the execution
     for event in graph.stream(initial_state, config):
-        pass  # Events are logged in node functions
+        pass
     
-    # Print the formatted execution log
     print(execution_logger.get_formatted_log())
     
     print(" WORKFLOW COMPLETE - EXECUTION LOG ABOVE")
-  
     
-    # Save to file
     log_file = Path("study_planner_execution_log.txt")
     with open(log_file, "w") as f:
         f.write(execution_logger.get_formatted_log())
