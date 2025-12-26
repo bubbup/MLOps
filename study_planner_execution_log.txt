@@ -1,24 +1,16 @@
 ================================================================================
-       LANGGRAPH MULTI-AGENT STUDY PLANNER - EXECUTION LOG
-[2025-12-26 18:30:57] [  0.02s] WORKFLOW START | course=Machine Learning Fundamentals | topics=8
-[2025-12-26 18:30:57] [  0.02s] ROUTE | START → researcher
-[2025-12-26 18:30:57] [  0.02s] NODE ENTRY | researcher | status=pending | topics=8
-[2025-12-26 18:30:57] [  0.02s] TOOL | analyze_course_content | course=Machine Learning Fundamentals | topics=8 | hours=28
-[2025-12-26 18:30:57] [  0.02s] LLM CALL | researcher | requesting learning order suggestions
-[2025-12-26 18:33:49] [172.24s] LLM RESPONSE | researcher | chars=1622
-[2025-12-26 18:33:49] [172.24s] NODE EXIT  | researcher | status=analyzed | est_hours=28
-[2025-12-26 18:33:49] [172.27s] ROUTE | researcher → scheduler | status=analyzed
-[2025-12-26 18:33:49] [172.30s] NODE ENTRY | scheduler | status=analyzed | revision=0
-[2025-12-26 18:33:49] [172.33s] TOOL | create_study_schedule | days=14 | daily_hours=2.0 | total_hours=28
-[2025-12-26 18:33:49] [172.33s] LLM CALL | scheduler | requesting study tips
-[2025-12-26 18:36:08] [311.42s] LLM RESPONSE | scheduler | chars=1578
-[2025-12-26 18:36:08] [311.42s] NODE EXIT  | scheduler | status=pending_validation | days=14
-[2025-12-26 18:36:08] [311.42s] ROUTE | scheduler → validator | status=pending_validation
-[2025-12-26 18:36:08] [311.42s] NODE ENTRY | validator | status=pending_validation | has_plan=True
-[2025-12-26 18:36:08] [311.42s] TOOL | validate_study_plan | feasible=True | score=95 | daily_hours=2.0
-[2025-12-26 18:36:08] [311.42s] NODE EXIT  | validator | status=validated | score=95 | revision=0
-[2025-12-26 18:36:08] [311.42s] ROUTE | validator → END | status=validated (SUCCESS)
-[2025-12-26 18:36:08] [311.43s] WORKFLOW COMPLETE | status=validated | has_plan=True
-[2025-12-26 18:36:08] [311.45s] PLAN DETAILS | status=validated | days=14 | daily_hrs=2.0 | total_hrs=28
-Total execution time: 311.45s
+  AUTOGEN MULTI-AGENT STUDY PLANNER - SEQUENTIAL (round robin) PIPELINE LOG
+[2025-12-26 19:52:10] [  0.54s] SYSTEM: Starting sequential pipeline
+[2025-12-26 19:52:10] [  0.54s] PHASE_1: Starting Researcher team
+[2025-12-26 19:52:13] [  3.19s] TOOL: analyze_course_content: Machine Learning Fundamentals -> 8 topics, 28 hours
+[2025-12-26 19:52:13] [  3.19s] RESEARCHER_OUTPUT: {"course": "Machine Learning Fundamentals", "total_topics": 8, "estimated_hours": 28, "difficulty_levels": {"Beginner": 3, "Intermediate": 3, "Advanced": 2}, "topics_breakdown": {"Linear Regression": {"difficulty": "Beginner", "hours": 2}, "Logistic Regression": {"difficulty": "Intermediate", "hours": 3}, "Decision Trees": {"difficulty": "Advanced", "hours": 4}, "Random Forests": {"difficulty": "Beginner", "hours": 5}, "Neural Networks": {"difficulty": "Intermediate", "hours": 2}, "SVM": {"difficulty": "Advanced", "hours": 3}, "K-Means": {"difficulty": "Beginner", "hours": 4}, "PCA": {"difficulty": "Intermediate", "hours": 5}}}
+[2025-12-26 19:52:13] [  3.20s] PHASE_2: Starting Scheduler team
+[2025-12-26 19:52:14] [  4.45s] TOOL: create_study_schedule: 7 days @ 4.0 hrs/day
+[2025-12-26 19:52:14] [  4.45s] SCHEDULER_OUTPUT: {"course": "Machine Learning Fundamentals", "estimated_hours": 28, "total_duration_days": 7, "daily_commitment_hours": 4.0, "daily_breakdown": {"Friday, December 26": {"study_hours": 4.0, "break_intervals": "25min focus / 5min break", "recommended_time": "Morning (9 AM - 12 PM)"}, "Saturday, December 27": {"study_hours": 4.0, "break_intervals": "25min focus / 5min break", "recommended_time": "Evening (6 PM - 9 PM)"}, "Sunday, December 28": {"study_hours": 4.0, "break_intervals": "25min focus / 5min break", "recommended_time": "Morning (9 AM - 12 PM)"}, "Monday, December 29": {"study_hours": 4.0, "break_intervals": "25min focus / 5min break", "recommended_time": "Evening (6 PM - 9 PM)"}, "Tuesday, December 30": {"study_hours": 4.0, "break_intervals": "25min focus / 5min break", "recommended_time": "Morning (9 AM - 12 PM)"}, "Wednesday, December 31": {"study_hours": 4.0, "break_intervals": "25min focus / 5min break", "recommended_time": "Evening (6 PM - 9 PM)"}, "Thursday, January 01": {"study_hours": 4.0, "break_intervals": "25min focus / 5min break", "recommended_time": "Morning (9 AM - 12 PM)"}}}
+[2025-12-26 19:52:14] [  4.46s] PHASE_3: Starting Validator team
+[2025-12-26 19:52:24] [ 14.45s] TOOL: validate_study_plan: feasible=True, score=95
+[2025-12-26 19:52:24] [ 14.45s] VALIDATOR_OUTPUT: {"is_feasible": true, "issues": [], "recommendations": ["Schedule is realistic and well-balanced"], "score": 95}
+[2025-12-26 19:52:24] [ 14.47s] FINAL_STATUS: Validation: True, Score: 95
+[2025-12-26 19:52:24] [ 14.47s] SYSTEM: Sequential pipeline completed successfully
+Total execution time: 14.47s
 ================================================================================
