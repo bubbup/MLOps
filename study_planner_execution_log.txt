@@ -1,0 +1,24 @@
+================================================================================
+       LANGGRAPH MULTI-AGENT STUDY PLANNER - EXECUTION LOG
+[2025-12-26 18:30:57] [  0.02s] WORKFLOW START | course=Machine Learning Fundamentals | topics=8
+[2025-12-26 18:30:57] [  0.02s] ROUTE | START → researcher
+[2025-12-26 18:30:57] [  0.02s] NODE ENTRY | researcher | status=pending | topics=8
+[2025-12-26 18:30:57] [  0.02s] TOOL | analyze_course_content | course=Machine Learning Fundamentals | topics=8 | hours=28
+[2025-12-26 18:30:57] [  0.02s] LLM CALL | researcher | requesting learning order suggestions
+[2025-12-26 18:33:49] [172.24s] LLM RESPONSE | researcher | chars=1622
+[2025-12-26 18:33:49] [172.24s] NODE EXIT  | researcher | status=analyzed | est_hours=28
+[2025-12-26 18:33:49] [172.27s] ROUTE | researcher → scheduler | status=analyzed
+[2025-12-26 18:33:49] [172.30s] NODE ENTRY | scheduler | status=analyzed | revision=0
+[2025-12-26 18:33:49] [172.33s] TOOL | create_study_schedule | days=14 | daily_hours=2.0 | total_hours=28
+[2025-12-26 18:33:49] [172.33s] LLM CALL | scheduler | requesting study tips
+[2025-12-26 18:36:08] [311.42s] LLM RESPONSE | scheduler | chars=1578
+[2025-12-26 18:36:08] [311.42s] NODE EXIT  | scheduler | status=pending_validation | days=14
+[2025-12-26 18:36:08] [311.42s] ROUTE | scheduler → validator | status=pending_validation
+[2025-12-26 18:36:08] [311.42s] NODE ENTRY | validator | status=pending_validation | has_plan=True
+[2025-12-26 18:36:08] [311.42s] TOOL | validate_study_plan | feasible=True | score=95 | daily_hours=2.0
+[2025-12-26 18:36:08] [311.42s] NODE EXIT  | validator | status=validated | score=95 | revision=0
+[2025-12-26 18:36:08] [311.42s] ROUTE | validator → END | status=validated (SUCCESS)
+[2025-12-26 18:36:08] [311.43s] WORKFLOW COMPLETE | status=validated | has_plan=True
+[2025-12-26 18:36:08] [311.45s] PLAN DETAILS | status=validated | days=14 | daily_hrs=2.0 | total_hrs=28
+Total execution time: 311.45s
+================================================================================
